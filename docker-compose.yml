@@ -1,0 +1,59 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+    restart: unless-stopped
+    ports:
+      - ${PORT}:${PORT}
+    environment:
+      APP_ENV: ${APP_ENV}
+      PORT: ${PORT}
+      U_SHORT_DB_HOST: ${U_SHORT_DB_HOST}
+      U_SHORT_DB_PORT: ${U_SHORT_DB_PORT}
+      U_SHORT_DB_DATABASE: ${U_SHORT_DB_DATABASE}
+      U_SHORT_DB_USERNAME: ${U_SHORT_DB_USERNAME}
+      U_SHORT_DB_PASSWORD: ${U_SHORT_DB_PASSWORD}
+      U_SHORT_DB_SCHEMA: ${U_SHORT_DB_SCHEMA}
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+    networks:
+      - blueprint
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - 5173:5173
+    networks:
+      - blueprint
+  psql_bp:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${U_SHORT_DB_DATABASE}
+      POSTGRES_USER: ${U_SHORT_DB_USERNAME}
+      POSTGRES_PASSWORD: ${U_SHORT_DB_PASSWORD}
+    ports:
+      - "${U_SHORT_DB_PORT}:5432"
+    volumes:
+      - psql_volume_bp:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${U_SHORT_DB_USERNAME} -d ${U_SHORT_DB_DATABASE}'"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - blueprint
+
+volumes:
+  psql_volume_bp:
+networks:
+  blueprint:
