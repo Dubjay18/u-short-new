@@ -1,4 +1,9 @@
 # Simple Makefile for a Go project
+SHELL := /bin/bash
+
+U_SHORT_DB_USERNAME := $(shell grep U_SHORT_DB_USERNAME .env | cut -d '=' -f2)
+U_SHORT_DB_PASSWORD := $(shell grep U_SHORT_DB_PASSWORD .env | cut -d '=' -f2)
+U_SHORT_DB_DATABASE := $(shell grep U_SHORT_DB_DATABASE .env | cut -d '=' -f2)
 
 # Build the application
 all: build test
@@ -62,5 +67,17 @@ watch:
                 exit 1; \
             fi; \
         fi
+migrate-status:
+	@echo "Checking..."
+	@source .env
+	@GOOSE_DRIVER=postgres GOOSE_DBSTRING="user=postgres dbname=u_short password=qwertyuiop sslmode=disable" goose -dir ./internal/database/migrations status
+migrate:
+	@echo "Migrating..."
+	@source .env
+	@goose -dir ./internal/database/migrations postgres "user=$(U_SHORT_DB_USERNAME) password=qwertyuiop dbname=$(U_SHORT_DB_DATABASE) sslmode=disable" up
+migrate-down:
+	@echo "Migrating..."
+	@source .env
+	@goose -dir ./internal/database/migrations postgres "user=$(U_SHORT_DB_USERNAME) password=qwertyuiop dbname=$(U_SHORT_DB_DATABASE) sslmode=disable" down
 
 .PHONY: all build run test clean watch docker-run docker-down itest
