@@ -12,3 +12,7 @@ type Url struct {
 	ClickCount  int       `json:"click_count" gorm:"not_null"`
 	IsActive    bool      `json:"is_active" gorm:"not_null"`
 }
+
+func (u *Url) getShortUrl() string {
+	return u.ShortUrl
+}
